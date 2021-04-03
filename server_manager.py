@@ -8,6 +8,8 @@ import requests
 from flask import Flask, jsonify, request
 from Blockchain import Blockchain
 
+from my_vars import *
+
 # Instantiate the Node
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
@@ -23,17 +25,14 @@ def mine():
     last_block = blockchain.last_block
     proof = blockchain.proof_of_work(last_block)
 
-    # We must receive a reward for finding the proof.
-    # The sender is "0" to signify that this node has mined a new coin.
-    blockchain.new_transaction(
-        sender="0",
-        recipient=node_identifier,
-        amount=1,
-    )
-
     # Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
     block = blockchain.new_block(proof, previous_hash)
+
+    # Blank check transactions should be rewarded to the miner
+    for transaction in block['transactions']:
+        if transaction['recipient'] == BLANK:
+            transaction['recipient'] = node_identifier
 
     response = {
         'message': "New Block Forged",
@@ -50,14 +49,17 @@ def new_transaction():
     values = request.get_json()
 
     # Check that the required fields are in the POST'ed data
-    required = ['sender', 'recipient', 'amount']
+    required = ['sender', 'recipient', 'amount', 'reward']
     if not all(k in values for k in required):
         return 'Missing values', 400
 
     # Create a new Transaction
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
 
-    response = {'message': f'Transaction will be added to Block {index}'}
+    # Create a new Reward transaction
+    blockchain.new_transaction(values['sender'], BLANK, values['reward'])
+
+    response = {'message': f'Transaction will be added to Block {index} with reward {values["reward"]}'}
     return jsonify(response), 201
 
 
