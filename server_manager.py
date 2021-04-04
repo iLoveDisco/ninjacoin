@@ -8,7 +8,7 @@ import requests
 from flask import Flask, jsonify, request
 from Blockchain import Blockchain
 
-from my_vars import *
+from constants import *
 
 # Instantiate the Node
 app = Flask(__name__)
@@ -27,12 +27,7 @@ def mine():
 
     # Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
-    block = blockchain.new_block(proof, previous_hash)
-
-    # Blank check transactions should be rewarded to the miner
-    for transaction in block['transactions']:
-        if transaction['recipient'] == BLANK:
-            transaction['recipient'] = node_identifier
+    block = blockchain.new_block(proof, previous_hash, node_identifier)
 
     response = {
         'message': "New Block Forged",
@@ -55,6 +50,10 @@ def new_transaction():
 
     # Create a new Transaction
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
+
+    if index == -1:
+        response = {'message': f'Insufficient funds. New users will be automatically given 5 ninjacoins'}
+        return jsonify(response), 201
 
     # Create a new Reward transaction
     blockchain.new_transaction(values['sender'], BLANK, values['reward'])
@@ -107,6 +106,13 @@ def consensus():
 
     return jsonify(response), 200
 
+@app.route('/ledger', methods=['GET'])
+def ledger():
+    return jsonify(blockchain.ledger), 200
+
+@app.route('/transactions/pending', methods=['GET'])
+def pending():
+    return jsonify({"pending_transactions" : blockchain.current_transactions}), 200
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

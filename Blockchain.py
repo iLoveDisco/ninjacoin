@@ -3,15 +3,19 @@ import json
 from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
+from constants import *
+import sys
 
 class Blockchain:
     def __init__(self):
         self.current_transactions = []
         self.chain = []
         self.nodes = set()
+        self.ledger = {"0" : sys.maxsize / 2}
 
         # Create the genesis block
-        self.new_block(previous_hash='1', proof=100)
+        self.new_block(previous_hash='1', proof=100, node_id=0)
+        
 
     def register_node(self, address):
         """
@@ -90,13 +94,16 @@ class Blockchain:
 
         return False
 
-    def new_block(self, proof, previous_hash):
+    def new_block(self, proof, previous_hash, node_id):
         """
         Create a new Block in the Blockchain
         :param proof: The proof given by the Proof of Work algorithm
         :param previous_hash: Hash of previous Block
         :return: New Block
         """
+
+        # Update the ledger according to the current transactions
+        self.update_ledger(node_id)
 
         block = {
             'index': len(self.chain) + 1,
@@ -112,6 +119,32 @@ class Blockchain:
         self.chain.append(block)
         return block
 
+    def update_ledger(self, node_id):
+        if node_id == 0:
+            return
+        
+        reward = 0
+        for transaction in self.current_transactions:
+            s_id = transaction['sender']
+            r_id = transaction['recipient']
+            amt = transaction['amount']
+
+            # Blank check transactions should be rewarded to the miner
+            if r_id == BLANK:
+                reward += amt
+
+            self.ledger[s_id] = self.ledger[s_id] - amt
+            self.ledger[r_id] = self.ledger[r_id] + amt
+
+        # Pay the miner's reward
+        self.new_transaction(BLANK, node_id, reward)
+
+        # Update the miner's ledger
+        if node_id in self.ledger:
+            self.ledger[node_id] = self.ledger[node_id] + reward
+        else:
+            self.ledger[node_id] = reward
+
     def new_transaction(self, sender, recipient, amount):
         """
         Creates a new transaction to go into the next mined Block
@@ -120,13 +153,51 @@ class Blockchain:
         :param amount: Amount
         :return: The index of the Block that will hold this transaction
         """
-        self.current_transactions.append({
+
+        transaction = {
             'sender': sender,
             'recipient': recipient,
             'amount': amount,
-        })
+        }
 
-        return self.last_block['index'] + 1
+        if self.verify_transaction(transaction):
+            self.current_transactions.append(transaction)
+
+            if self.chain == []:
+                return -1
+
+            return self.last_block['index'] + 1
+
+        return -1
+
+    def verify_transaction(self, transaction):
+        s_id = transaction['sender']
+        r_id = transaction['recipient']
+        amt = transaction['amount']
+
+        # Check for sufficient funds
+        if s_id in self.ledger and r_id in self.ledger:
+            return self.ledger[s_id] >= amt
+        
+        # Check if sender is in the ledger
+        if not s_id in self.ledger:
+            self.ledger[s_id] = 0
+
+            self.new_transaction("0", s_id, INITIAL_REWARD)
+            self.new_transaction("0", BLANK, DEFAULT_REWARD) # Miner reward
+
+            print(f"{s_id} does not exist yet. Adding them to the ledger...")
+        
+        # Check if recipient is in the ledger
+        if not r_id in self.ledger:
+            self.ledger[r_id] = 0
+
+            self.new_transaction("0", r_id, INITIAL_REWARD)
+            self.new_transaction("0", BLANK, DEFAULT_REWARD) # Miner reward
+
+            print(f"{r_id} does not exist yet. Adding them to the ledger...")
+
+        return False
 
     @property
     def last_block(self):
