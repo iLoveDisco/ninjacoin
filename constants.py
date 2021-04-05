@@ -1,4 +1,4 @@
-BLANK = "0"
+BLANK = "miner"
 
 INITIAL_REWARD = 5
 

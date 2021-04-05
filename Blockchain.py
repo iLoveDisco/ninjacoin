@@ -11,7 +11,7 @@ class Blockchain:
         self.current_transactions = []
         self.chain = []
         self.nodes = set()
-        self.ledger = {"0" : sys.maxsize / 2}
+        self.ledger = {"0" : sys.maxsize / 2, BLANK : 0}
 
         # Create the genesis block
         self.new_block(previous_hash='1', proof=100, node_id=0)
@@ -131,19 +131,14 @@ class Blockchain:
 
             # Blank check transactions should be rewarded to the miner
             if r_id == BLANK:
-                reward += amt
+                transaction['recipient'] = node_id
+                r_id = transaction['recipient']
+
+                if not r_id in self.ledger:
+                    self.ledger[r_id] = 0
 
             self.ledger[s_id] = self.ledger[s_id] - amt
             self.ledger[r_id] = self.ledger[r_id] + amt
-
-        # Pay the miner's reward
-        self.new_transaction(BLANK, node_id, reward)
-
-        # Update the miner's ledger
-        if node_id in self.ledger:
-            self.ledger[node_id] = self.ledger[node_id] + reward
-        else:
-            self.ledger[node_id] = reward
 
     def new_transaction(self, sender, recipient, amount):
         """
@@ -160,7 +155,7 @@ class Blockchain:
             'amount': amount,
         }
 
-        if self.verify_transaction(transaction):
+        if self.is_valid_transaction(transaction):
             self.current_transactions.append(transaction)
 
             if self.chain == []:
@@ -170,7 +165,7 @@ class Blockchain:
 
         return -1
 
-    def verify_transaction(self, transaction):
+    def is_valid_transaction(self, transaction):
         s_id = transaction['sender']
         r_id = transaction['recipient']
         amt = transaction['amount']
@@ -183,6 +178,7 @@ class Blockchain:
         if not s_id in self.ledger:
             self.ledger[s_id] = 0
 
+            # Give initial amount of coins to new user
             self.new_transaction("0", s_id, INITIAL_REWARD)
             self.new_transaction("0", BLANK, DEFAULT_REWARD) # Miner reward
 
@@ -190,12 +186,22 @@ class Blockchain:
         
         # Check if recipient is in the ledger
         if not r_id in self.ledger:
-            self.ledger[r_id] = 0
 
+            # These checks are valid
+            if r_id == BLANK:
+                return True
+
+            self.ledger[r_id] = 0
+            
+            # Give initial amount of coins to new user
             self.new_transaction("0", r_id, INITIAL_REWARD)
             self.new_transaction("0", BLANK, DEFAULT_REWARD) # Miner reward
 
             print(f"{r_id} does not exist yet. Adding them to the ledger...")
+
+        # 0 is allowed to do anything she wants
+        if s_id == "0":
+            return True
 
         return False
 

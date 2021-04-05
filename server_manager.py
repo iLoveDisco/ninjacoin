@@ -52,7 +52,7 @@ def new_transaction():
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
 
     if index == -1:
-        response = {'message': f'Insufficient funds. New users will be automatically given 5 ninjacoins'}
+        response = {'message': f'[TRANSACTION DENIED] Insufficient funds. New users will be automatically given 5 ninjacoins'}
         return jsonify(response), 201
 
     # Create a new Reward transaction
