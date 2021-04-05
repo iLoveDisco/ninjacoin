@@ -117,7 +117,9 @@ class Blockchain:
         self.current_transactions = []
 
         self.chain.append(block)
+
         return block
+
 
     def commit_ledger(self, node_id):
         if node_id == 0:

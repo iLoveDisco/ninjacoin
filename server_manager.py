@@ -7,14 +7,15 @@ from uuid import uuid4
 import requests
 from flask import Flask, jsonify, request
 from Blockchain import Blockchain
-
+from flask_cors import CORS
 from constants import *
 
 # Instantiate the Node
 app = Flask(__name__)
+CORS(app)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 # Generate a globally unique address for this node
-node_identifier = str(uuid4()).replace('-', '')
+node_identifier = "guy_who_is_mining"
 
 # Instantiate the Blockchain
 blockchain = Blockchain()
@@ -36,6 +37,7 @@ def mine():
         'proof': block['proof'],
         'previous_hash': block['previous_hash'],
     }
+
     return jsonify(response), 200
 
 
@@ -49,7 +51,7 @@ def new_transaction():
         return 'Missing values', 400
 
     if not blockchain.is_valid_transaction({"sender" : values['sender'], "recipient" : values['recipient'], "amount" : values['amount'] + values['reward']}):
-        response = {'message': f'[TRANSACTION DENIED] Insufficient funds'}
+        response = {'message': f'[TRANSACTION DENIED] Insufficient funds. If you are a new user then you will be given 5 Ninja Coin to start with'}
         return jsonify(response), 201
 
     # Create a new Transaction
