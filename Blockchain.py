@@ -11,8 +11,8 @@ class Blockchain:
         self.current_transactions = []
         self.chain = []
         self.nodes = set()
-        self.ledger = {"0" : sys.maxsize / 2, BLANK : 0}
-
+        self.ledger = {"0" : sys.maxsize / 2}
+        self.staging_ledger = self.ledger.copy()
         # Create the genesis block
         self.new_block(previous_hash='1', proof=100, node_id=0)
         
@@ -103,7 +103,7 @@ class Blockchain:
         """
 
         # Update the ledger according to the current transactions
-        self.update_ledger(node_id)
+        self.commit_ledger(node_id)
 
         block = {
             'index': len(self.chain) + 1,
@@ -119,11 +119,10 @@ class Blockchain:
         self.chain.append(block)
         return block
 
-    def update_ledger(self, node_id):
+    def commit_ledger(self, node_id):
         if node_id == 0:
             return
         
-        reward = 0
         for transaction in self.current_transactions:
             s_id = transaction['sender']
             r_id = transaction['recipient']
@@ -134,11 +133,14 @@ class Blockchain:
                 transaction['recipient'] = node_id
                 r_id = transaction['recipient']
 
-                if not r_id in self.ledger:
-                    self.ledger[r_id] = 0
+                # Update the ledger
+                if not r_id in self.staging_ledger:
+                    self.staging_ledger[r_id] = amt
+                else:
+                    self.staging_ledger[r_id] = self.staging_ledger[r_id] + amt
 
-            self.ledger[s_id] = self.ledger[s_id] - amt
-            self.ledger[r_id] = self.ledger[r_id] + amt
+        self.ledger = self.staging_ledger
+        self.staging_ledger = self.ledger.copy()
 
     def new_transaction(self, sender, recipient, amount):
         """
@@ -158,9 +160,19 @@ class Blockchain:
         if self.is_valid_transaction(transaction):
             self.current_transactions.append(transaction)
 
+            # Handles the genesis block
             if self.chain == []:
                 return -1
 
+            # Update the staging ledger
+            self.staging_ledger[sender] = self.staging_ledger[sender] - amount 
+
+            # commit_ledger handles the blank check ledger updates. not here
+            if recipient == BLANK:
+                return self.last_block['index'] + 1
+            else: 
+                self.staging_ledger[recipient] = self.staging_ledger[recipient] + amount
+            
             return self.last_block['index'] + 1
 
         return -1
@@ -171,12 +183,12 @@ class Blockchain:
         amt = transaction['amount']
 
         # Check for sufficient funds
-        if s_id in self.ledger and r_id in self.ledger:
-            return self.ledger[s_id] >= amt
+        if s_id in self.staging_ledger:
+            return self.staging_ledger[s_id] >= amt
         
         # Check if sender is in the ledger
-        if not s_id in self.ledger:
-            self.ledger[s_id] = 0
+        if not s_id in self.staging_ledger:
+            self.staging_ledger[s_id] = 0
 
             # Give initial amount of coins to new user
             self.new_transaction("0", s_id, INITIAL_REWARD)
@@ -184,14 +196,13 @@ class Blockchain:
 
             print(f"{s_id} does not exist yet. Adding them to the ledger...")
         
+        # Blank checks are valid
+        if r_id == BLANK:
+            return True
+
         # Check if recipient is in the ledger
-        if not r_id in self.ledger:
-
-            # These checks are valid
-            if r_id == BLANK:
-                return True
-
-            self.ledger[r_id] = 0
+        if not r_id in self.staging_ledger:
+            self.staging_ledger[r_id] = 0
             
             # Give initial amount of coins to new user
             self.new_transaction("0", r_id, INITIAL_REWARD)

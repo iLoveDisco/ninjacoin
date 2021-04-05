@@ -48,12 +48,12 @@ def new_transaction():
     if not all(k in values for k in required):
         return 'Missing values', 400
 
+    if not blockchain.is_valid_transaction({"sender" : values['sender'], "recipient" : values['recipient'], "amount" : values['amount'] + values['reward']}):
+        response = {'message': f'[TRANSACTION DENIED] Insufficient funds'}
+        return jsonify(response), 201
+
     # Create a new Transaction
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
-
-    if index == -1:
-        response = {'message': f'[TRANSACTION DENIED] Insufficient funds. New users will be automatically given 5 ninjacoins'}
-        return jsonify(response), 201
 
     # Create a new Reward transaction
     blockchain.new_transaction(values['sender'], BLANK, values['reward'])
