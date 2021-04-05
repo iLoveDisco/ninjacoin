@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+     
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles/main.css">
+    <title>Ninja Coin</title>
+
+ 
+    
+    
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <a class="navbar-brand" id="view_chain" href="#">View blockchain</a>
+    
+      <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+          <li class="nav-item active">
+            <a class="nav-link" id="unmined_transactions" href="#">Unmined Transactions <span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item active">
+            <a class="nav-link" id="ledger" href="#">Current Ledger<span class="sr-only">(current)</span></a>
+          </li>
+          
+          <li class="nav-item active">
+            <a class="nav-link " id="mine" href="#">Mine<span class="sr-only">(current)</span></a>
+          </li>
+          <li class="nav-item active">
+            <a class="nav-link " id="save_to_disk" href="#">Save to Disk<span class="sr-only">(current)</span></a>
+          </li>
+        </ul>
+        
+      </div>
+    </nav>
+  
+    
+    <form>
+      <div class="form-group">
+        <label for="sender_address">Sender address</label>
+        <input type="email" class="form-control" id="sender_address" aria-describedby="emailHelp" placeholder="Enter sender address">
+      </div>
+      <div class="form-group">
+        <label for="receiver_address">Recipient address</label>
+        <input type="email" class="form-control" id="receiver_address" aria-describedby="emailHelp" placeholder="Enter recepient address">
+      </div>
+      <div class="form-group">
+        <label for="amount">Amount</label>
+        <input   class="form-control" id="amount" placeholder="Enter amount of coin to transfer">
+      </div>
+      <div class="form-group">
+        <label for="gas">Reward</label>
+        <input   class="form-control" id="gas" placeholder="Enter Reward amount">
+      </div>
+      
+      <button id="submit" type="submit" class="btn btn-primary">Submit</button>
+    </form>
+    <pre id="json"></pre>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    
+    <script src="scripts/main.js"> </script>
+  </body>
+</html>
